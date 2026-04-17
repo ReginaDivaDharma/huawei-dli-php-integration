@@ -6,10 +6,8 @@ A guide for connecting a PHP application to Huawei Cloud Data Lake Insight (DLI)
 
 ## Architecture Overview
 
-```
-<img width="1327" height="747" alt="image" src="https://github.com/user-attachments/assets/d28fd1ff-215b-4a74-bdb5-09d7cb05ef4c" />
+<img width="1320" height="745" alt="image" src="https://github.com/user-attachments/assets/d0f8414a-578f-4ad4-8a07-be6380191703" />
 
-```
 
 The PHP application connects to DLI through a Hive-compatible ODBC driver. This driver establishes a HiveServer2 (Thrift) session with Apache Kyuubi, which acts as a stable gateway to DLI. Because DLI is serverless, it does not expose a persistent database endpoint , Kyuubi provides that stable endpoint (Port 10009) so PHP can trigger Spark SQL jobs without needing a local Spark environment.
 
