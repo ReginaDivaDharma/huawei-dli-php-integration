@@ -171,24 +171,131 @@ If you see your DLI databases listed, Kyuubi is successfully connected to DLI. �
 ---
 
 ## Part 2 — Connect via ODBC (PHP)
-
-*(Coming soon — covers installing the Hive ODBC driver, configuring `php-odbc`, and making SQL queries from PHP.)*
-
+ 
+This part covers connecting PHP to Kyuubi using unixODBC and the Cloudera Hive ODBC driver.
+ 
+```
+PHP → unixODBC → Hive ODBC Driver → Kyuubi (10009) → DLI
+```
+ 
+### Step 1 — Install the Hive ODBC Driver
+ 
+Install the Cloudera Hive ODBC driver RPM package:
+ 
+```bash
+yum install -y ClouderaHiveODBC-2.6.1.1001-1.x86_64.rpm
+```
+ 
+### Step 2 — Find the Driver Path
+ 
+After installation, confirm the location of the driver shared library:
+ 
+```bash
+find /opt -name "*hiveodbc*.so"
+```
+ 
+You should see a path similar to `/opt/cloudera/hiveodbc/lib/64/libclouderahiveodbc64.so`. Take note of this path — you will need it in the next step.
+ 
+### Step 3 — Register the Driver in `odbcinst.ini`
+ 
+Edit the system ODBC driver registry to register the Hive driver:
+ 
+```bash
+vi /etc/odbcinst.ini
+```
+ 
+Add the following block:
+ 
+```ini
+[Cloudera Hive ODBC Driver 64-bit]
+Driver=/opt/cloudera/hiveodbc/lib/64/libclouderahiveodbc64.so
+```
+ 
+> The section name in brackets (`[Cloudera Hive ODBC Driver 64-bit]`) is the driver label. It must match exactly what you reference in `odbc.ini` in the next step.
+ 
+### Step 4 — Configure the DSN in `odbc.ini`
+ 
+Create a Data Source Name (DSN) that points to your Kyuubi instance:
+ 
+```bash
+vi /etc/odbc.ini
+```
+ 
+Add the following block:
+ 
+```ini
+[kyuubi_dsn]
+Driver=Cloudera Hive ODBC Driver 64-bit
+Host=127.0.0.1
+Port=10009
+Schema=default
+HiveServerType=2
+AuthMech=2
+UID=root
+ThriftTransport=1
+SSL=0
+```
+ 
+The key properties are explained below:
+ 
+| Property | Value | Description |
+|---|---|---|
+| `Driver` | `Cloudera Hive ODBC Driver 64-bit` | Must match the label in `odbcinst.ini` |
+| `Host` | `127.0.0.1` | Kyuubi is running on the same server |
+| `Port` | `10009` | Kyuubi Thrift Binary port |
+| `Schema` | `default` | Default DLI database/schema to use |
+| `HiveServerType` | `2` | HiveServer2 mode (required for Kyuubi) |
+| `AuthMech` | `2` | Username-only authentication |
+| `UID` | `root` | Username passed to Kyuubi |
+| `ThriftTransport` | `1` | Binary transport (matches Kyuubi's Thrift Binary frontend) |
+| `SSL` | `0` | SSL disabled (enable if your setup requires it) |
+ 
+### Step 5 — Install the PHP ODBC Extension
+ 
+Install the `php-odbc` package so PHP can make ODBC connections:
+ 
+```bash
+yum install -y php-odbc
+```
+ 
+Verify the extension is loaded:
+ 
+```bash
+php -m | grep -i odbc
+# Expected output: odbc
+```
+ 
+### Step 6 — Test the ODBC Connection
+ 
+Before testing from PHP, verify the DSN works at the system level using `isql`:
+ 
+```bash
+isql -v kyuubi_dsn
+```
+ 
+If successful, you will be dropped into an interactive SQL prompt connected to DLI through Kyuubi. Try a quick query:
+ 
+```sql
+SHOW DATABASES;
+```
+ 
+If this returns your DLI databases, the full ODBC stack is working correctly. ✅ You are now ready to use `odbc_connect()` from PHP to query DLI.
+ 
 ---
-
+ 
 ## Troubleshooting
-
+ 
 | Symptom | Likely Cause | Fix |
 |---|---|---|
 | Kyuubi fails to start | Java not found or wrong version | Confirm `java -version` returns 1.8.0 |
 | `ClassNotFoundException` in logs | Driver JAR not in the right folder | Check `externals/engines/jdbc/` for the DLI JAR |
 | Connection refused on port 10009 | Kyuubi not running, or firewall blocking | Check logs; open port 10009 in security group |
 | DLI query fails with auth error | Wrong AK/SK in config | Re-check `kyuubi-defaults.conf` credentials |
-
+ 
 ---
-
+ 
 ## References
-
+ 
 - [Apache Kyuubi Documentation](https://kyuubi.readthedocs.io/)
 - [Huawei DLI Product Page](https://www.huaweicloud.com/product/dli.html)
 - [DLI SDK Downloads](https://uquery-sdk.obs-website.cn-north-1.myhwclouds.com/?locale=en-us)
