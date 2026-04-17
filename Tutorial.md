@@ -17,7 +17,8 @@ The PHP application connects to DLI through a Hive-compatible ODBC driver. This 
 
 - [Prerequisites](#prerequisites)
 - [Part 1 — Set Up Apache Kyuubi](#part-1--set-up-apache-kyuubi)
-- [Part 2 — Connect via ODBC (PHP)](#part-2--connect-via-odbc-php) 
+- [Part 2 — Connect via ODBC (PHP)](#part-2--connect-via-odbc-php)
+- [Part 3 — Connect DLI via PHP)](#part-2--connect-via-odbc-php) 
 
 ---
 
@@ -282,7 +283,96 @@ SHOW DATABASES;
 If this returns your DLI databases, the full ODBC stack is working correctly. ✅ You are now ready to use `odbc_connect()` from PHP to query DLI.
  
 ---
+
+## Part 3 — Test with a PHP Script
  
+Now that Kyuubi is running and the ODBC connection is verified, it's time to test the full stack from PHP. The script below connects to DLI via the ODBC DSN and lists all tables in a given database.
+ 
+### The Script
+ 
+Create a file called `explore_dli.php` (or use your own existing PHP file):
+ 
+```php
+<?php
+/**
+ * DLI Database Explorer
+ * Lists tables within a specific DLI database via Kyuubi ODBC.
+ */
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ 
+echo "--- DLI Table Explorer ---\n";
+ 
+// --- CONNECTION SETUP ---
+// 'kyuubi_dsn' must match the DSN name you configured in /etc/odbc.ini
+$dsn  = 'kyuubi_dsn';
+$user = '';
+$pass = '';
+ 
+$conn = odbc_connect($dsn, $user, $pass);
+if (!$conn) {
+    die("ERROR: Connection failed. Check if Kyuubi is running and your ODBC DSN is correct.\n");
+}
+echo "Successfully connected to Kyuubi via ODBC.\n\n";
+ 
+// --- DYNAMIC INPUT ---
+// Pass a database name as an argument when running from terminal:
+//   php explore_dli.php your_database_name
+// Defaults to 'dummy_data' if no argument is given.
+$database = $argv[1] ?? 'dummy_data';
+echo "Target Database: $database\n";
+ 
+// --- THE QUERY ---
+$sql = "SHOW TABLES IN " . $database;
+echo "Executing query...\n";
+ 
+$result = odbc_exec($conn, $sql);
+if (!$result) {
+    die("ERROR: Could not fetch tables. Does the database '$database' exist?\n");
+}
+ 
+// --- RESULTS DISPLAY ---
+echo "Found the following tables:\n";
+echo str_repeat("-", 30) . "\n";
+ 
+$count = 0;
+while ($row = odbc_fetch_array($result)) {
+    $count++;
+    // DLI returns either 'tableName' or 'tab_name' depending on version
+    $tableName = $row['tableName'] ?? $row['tab_name'] ?? 'Unknown';
+    echo "[$count] $tableName\n";
+}
+ 
+if ($count === 0) {
+    echo "No tables found or database is empty.\n";
+}
+ 
+odbc_close($conn);
+echo "\nOperation Complete.\n";
+?>
+```
+ 
+### Running the Script
+ 
+Make sure Kyuubi is running before executing the script (see [Part 1 — Step 5](#step-5--start-kyuubi)).
+ 
+Run with the default database (`dummy_data`):
+ 
+```bash
+php /root/Downloads/phpscript/explore_dli.php
+```
+ 
+Or pass a different database name as an argument:
+ 
+```bash
+php /root/Downloads/phpscript/explore_dli.php your_database_name
+```
+
+### Expected Output
+ 
+If everything is configured correctly, you should see output similar to this:
+
+
 ## Troubleshooting
  
 | Symptom | Likely Cause | Fix |
