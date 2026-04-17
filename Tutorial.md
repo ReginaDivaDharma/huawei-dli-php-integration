@@ -17,7 +17,7 @@ The PHP application connects to DLI through a Hive-compatible ODBC driver. This 
 
 - [Prerequisites](#prerequisites)
 - [Part 1 — Set Up Apache Kyuubi](#part-1--set-up-apache-kyuubi)
-- [Part 2 — Connect via ODBC (PHP)](#part-2--connect-via-odbc-php) *(coming soon)*
+- [Part 2 — Connect via ODBC (PHP)](#part-2--connect-via-odbc-php) 
 
 ---
 
