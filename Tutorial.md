@@ -26,7 +26,7 @@ The PHP application connects to DLI through a Hive-compatible ODBC driver. This 
 
 Before starting, make sure the following are in place:
 
-- **DLI is ready** — you have an active DLI SQL queue and some dummy/test data loaded. A NAT Gateway must also be configured so that DLI can be accessed from VMs on other networks. *(See: [DLI + NAT Gateway Setup Guide](#) — add your link here)*
+- **DLI is ready** — you have an active DLI SQL queue and some dummy/test data loaded. A NAT Gateway must also be configured so that DLI can be accessed from VMs on other networks. *(See: [DLI + NAT Gateway Setup Guide](#https://github.com/ReginaDivaDharma/huawei-denodo-integration/blob/main/dli-integration.md#step-1--networking-setup))*
 - **Java 1.8.0** is installed on the server that will run Kyuubi.
 
 Verify your Java version:
